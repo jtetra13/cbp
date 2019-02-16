@@ -1,0 +1,3 @@
+[submodule "go-coinbasepro"]
+	path = go-coinbasepro
+	url = https://github.com/preichenberger/go-coinbasepro
