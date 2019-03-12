@@ -1,9 +1,10 @@
 # Start the Go app build
-FROM golang:latest
+FROM golang:latest as builder
 
-#Copy source
-WORKDIR src/github.com/jtetra13/cbp
-COPY . .
+ENV GO111MODULE=on
+
+COPY . /jbit
+WORKDIR /jbit
 
 # Configure Git to use token
 # ARG GITHUB_TOKEN=
@@ -11,22 +12,20 @@ COPY . .
 # RUN git config --global url."https://$(GITHUB_TOKEN):x-oauth-basic@github.com/".insteadOf "https://github.com"
 # Get required modules (assumes packages have been added to ./vendor)
 
-# Build a statically-linked Go binary for Linux
-# RUN go build
-
-# New build phase -- create binary-only image
-# FROM alpine:latest
-
 # Add support for HTTPS and time zones
 #RUN apk update && \
 #   apk upgrade && \
 #   apk add ca-certificates && \
 #   apk add tzdata
 
-RUN go get -d -v ./...
-RUN pwd && find .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o jbit
 
+FROM alpine:latest
 
-# Start the application
-# CMD ["github.com/go-coinbasepro/main"]
-CMD ["go", "run", "main.go"]
+WORKDIR /root/
+
+COPY --from=builder /jbit .
+
+RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
+RUN chmod 755 jbit
+CMD ["./jbit"]
